@@ -1,6 +1,7 @@
 const express = require('express');
 const { Todo } = require('../mongo')
 const router = express.Router();
+const {getAsync, setAsync} = require("../redis/index");
 
 /* GET todos listing. */
 router.get('/', async (_, res) => {
@@ -10,6 +11,8 @@ router.get('/', async (_, res) => {
 
 /* POST todo to listing. */
 router.post('/', async (req, res) => {
+  const todos = Number(await getAsync("added_todos"));
+  await setAsync("added_todos", todos ? todos + 1 : 0);
   const todo = await Todo.create({
     text: req.body.text,
     done: false
@@ -35,12 +38,20 @@ singleRouter.delete('/', async (req, res) => {
 
 /* GET todo. */
 singleRouter.get('/', async (req, res) => {
-  res.sendStatus(405); // Implement this
+  if (!req.todo) return res.sendStatus(405);
+  res.json(req.todo);
 });
 
 /* PUT todo. */
 singleRouter.put('/', async (req, res) => {
-  res.sendStatus(405); // Implement this
+  if (!req.todo) return res.sendStatus(405); // Implement this
+
+  const updatedTodo = {...req.todo._doc, text: req.body.text}
+  
+  const found = await Todo.findByIdAndUpdate(req.todo._id, updatedTodo, {new: true});
+
+  res.json(found);
+
 });
 
 router.use('/:id', findByIdMiddleware, singleRouter)

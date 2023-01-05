@@ -1,0 +1,8 @@
+nano /usr/src/app/index.js
+
+console.log(Hello world)
+
+^X
+
+Y
+
